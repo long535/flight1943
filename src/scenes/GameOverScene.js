@@ -67,16 +67,7 @@ export default class GameOverScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Buttons
-    this.createBtn(W / 2, H * 0.8, '▶ RETRY', () => {
-      // Transition properly without killing the delayed call
-      this.time.delayedCall(80, () => {
-        this.scene.stop('UIScene');
-        this.scene.start('GameScene', { difficulty: this.difficulty });
-        this.scene.launch('UIScene',  { difficulty: this.difficulty });
-      });
-    });
-
-    this.createBtn(W / 2, H * 0.89, '⌂ MENU', () => {
+    this.createBtn(W / 2, H * 0.85, '⌂ MENU', () => {
       this.time.delayedCall(80, () => {
         this.scene.stop('UIScene');
         this.scene.stop('GameScene');

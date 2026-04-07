@@ -91,6 +91,7 @@ export default class GameScene extends Phaser.Scene {
     this.wingmanR = this.add.image(-500,-500,'player').setScale(wScale).setDepth(4).setAlpha(0.75).setVisible(false);
 
     // ── Input ──────────────────────────────────────────────
+    this.input.addPointer(2); // enable 2-touch functionality for APK
     this.input.on('pointerdown', this.onPointerDown, this);
     this.input.on('pointermove', this.onPointerMove, this);
     this.input.on('pointerup',   this.onPointerUp,   this);

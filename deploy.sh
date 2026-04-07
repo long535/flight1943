@@ -25,12 +25,12 @@ echo "APK successfully built."
 
 echo "Configuring Git..."
 git add .
-git commit -m "Release Flight 1943 v0.2.0" || true
+git commit -m "Release Flight 1943 v0.2.1" || true
 
 echo "Deploying to GitHub..."
 git push -u origin main || true
 
 echo "Creating GitHub Release..."
-gh release create v0.2.0 android/app/build/outputs/apk/debug/app-debug.apk --title "Flight 1943 v0.2.0" --notes "Massive bullet density tuning & visually improved S-400."
+gh release create v0.2.1 android/app/build/outputs/apk/debug/app-debug.apk --title "Flight 1943 v0.2.1" --notes "UI Menu hotfix and Multi-touch bomb Android support."
 
 echo "Done!"
