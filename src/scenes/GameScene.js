@@ -372,9 +372,9 @@ export default class GameScene extends Phaser.Scene {
     go._fireTimer   = Phaser.Math.Between(1500,3000);
     go._fireInterval= (type==='aa_gun'||type==='ship')?2200:3500;
     this.groundObjs.push(go);
+    // Completely static ground presence (no horizontal drifting)
     if(type==='tank'||type==='ship'){
-      // Extremely slow horizontal movement
-      this.tweens.add({targets:go,x:x+(Phaser.Math.Between(0,1)?40:-40),duration:(type==='ship'?8000:5000),yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+      // They will rigidly match the background scroll speed
     }
     return go;
   }
