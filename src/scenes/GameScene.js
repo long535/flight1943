@@ -174,7 +174,13 @@ export default class GameScene extends Phaser.Scene {
     } else { this.wingmanL.setVisible(false); this.wingmanR.setVisible(false); }
 
     // Cull enemies
-    this.enemies.getChildren().forEach(e=>{if(e.y>GAME_H+80)e.destroy();});
+    this.enemies.getChildren().forEach(e=>{
+      if(e.y>GAME_H+80) {
+        e.destroy();
+      } else if (e.active && e.eType === 's400' && this.player?.active) {
+        e.rotation = Phaser.Math.Angle.Between(e.x, e.y, this.player.x, this.player.y) + Math.PI/2;
+      }
+    });
 
     // Update Power-ups (Manual Coordinate Math for Perfect 4-Wall Bounce)
     this.powerUpGroup.getChildren().forEach(p => {
@@ -559,7 +565,8 @@ export default class GameScene extends Phaser.Scene {
         this.physics.velocityFromAngle(ang,240,e.body.velocity);
       });
     } else {
-      const fd=(data.fireDelay||2500)/this.diffMult;
+      const fireDelayMult = this.difficulty === 'hard' ? 0.25 : 0.5;
+      const fd = (data.fireDelay||2500) * fireDelayMult;
       this.time.addEvent({delay:fd+Phaser.Math.Between(0,600),callback:()=>this._enemyFire(e,type),callbackScope:this,loop:true,startAt:Phaser.Math.Between(200,800)});
     }
     this.enemies.add(e);

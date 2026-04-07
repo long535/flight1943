@@ -60,6 +60,7 @@ export default class BootScene extends Phaser.Scene {
 
     // New Enemies & Bosses
     this.load.image('enemy_mi24', '/assets/sprites/enemy_mi24.png');
+    this.load.image('enemy_s400', '/assets/sprites/enemy_s400.png');
     this.load.image('boss_submarine', '/assets/sprites/boss_submarine.png');
     this.load.image('boss_fortress', '/assets/sprites/boss_fortress.png');
     this.load.image('boss_core', '/assets/sprites/boss_core.png');

@@ -7,6 +7,10 @@ echo "Starting deployment process..."
 export ANDROID_HOME=/home/vibecodingvm/Android/Sdk
 echo "sdk.dir=/home/vibecodingvm/Android/Sdk" > android/local.properties
 
+echo "Building Web Assets..."
+npm run build
+npx cap sync android
+
 echo "Building APK..."
 cd android
 ./gradlew assembleDebug
@@ -20,17 +24,13 @@ fi
 echo "APK successfully built."
 
 echo "Configuring Git..."
-git init
-git checkout -b main || git branch -M main
-git config user.name "long535"
-git config user.email "long535@users.noreply.github.com"
 git add .
-git commit -m "Initialize Flight 1943 v0.1.0 Android Release"
+git commit -m "Release Flight 1943 v0.2.0" || true
 
 echo "Deploying to GitHub..."
-gh repo create flight1943 --public --source=. --remote=origin --push || true
+git push -u origin main || true
 
 echo "Creating GitHub Release..."
-gh release create v0.1.0 android/app/build/outputs/apk/debug/app-debug.apk --title "Flight 1943 v0.1.0" --notes "First Android Release using Capacitor."
+gh release create v0.2.0 android/app/build/outputs/apk/debug/app-debug.apk --title "Flight 1943 v0.2.0" --notes "Massive bullet density tuning & visually improved S-400."
 
 echo "Done!"

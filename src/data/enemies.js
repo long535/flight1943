@@ -49,16 +49,16 @@ export const ENEMY_DATA = {
     dropChance: 0.02
   },
   s400: {
-    texture: 'enemy_ka52',  // placeholder
-    sizePx: 52,
+    texture: 'enemy_s400',
+    sizePx: 26,
     hp: 6,
-    speed: 55,
+    speed: 0,
     points: 500,
     bulletPattern: 'spiral',
     bulletColor: 0xff00cc,
     bulletSpeed: 310,
     fireDelay: 1100,
-    zigzag: true,
+    zigzag: false,
     dropChance: 0.10
   }
 };
