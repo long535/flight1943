@@ -1,3 +1,5 @@
+import { RetroAudio } from '../audio/RetroAudio';
+
 export default class MenuScene extends Phaser.Scene {
   constructor() {
     super({ key: 'MenuScene' });
@@ -78,6 +80,8 @@ export default class MenuScene extends Phaser.Scene {
     startBtn.on('pointerdown', () => {
       this.cameras.main.flash(300, 255, 215, 0);
       this.time.delayedCall(300, () => {
+        RetroAudio.init();
+        RetroAudio.playShoot(); // small UI click confirm
         this.scene.stop('UIScene');
         this.scene.stop('GameOverScene');
         this.scene.start('GameScene', { difficulty: this.selectedDifficulty });
@@ -98,6 +102,13 @@ export default class MenuScene extends Phaser.Scene {
       fontFamily: '"Press Start 2P", monospace',
       fontSize: '7px',
       color: '#444466'
+    }).setOrigin(0.5);
+
+    // Version String
+    this.add.text(W / 2, H - 32, 'v0.2.3', {
+      fontFamily: '"Press Start 2P", monospace',
+      fontSize: '7px',
+      color: '#555577'
     }).setOrigin(0.5);
 
     // Floating particles (stars)

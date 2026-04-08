@@ -25,12 +25,12 @@ echo "APK successfully built."
 
 echo "Configuring Git..."
 git add .
-git commit -m "Release Flight 1943 v0.2.2" || true
+git commit -m "Release Flight 1943 v0.2.3" || true
 
 echo "Deploying to GitHub..."
 git push -u origin main || true
 
 echo "Creating GitHub Release..."
-gh release create v0.2.2 android/app/build/outputs/apk/debug/app-debug.apk --title "Flight 1943 v0.2.2" --notes "Enemy counts 300% inflated & ground turrets/units are stationary relative to terrain."
+gh release create v0.2.3 android/app/build/outputs/apk/debug/app-debug.apk --title "Flight 1943 v0.2.3" --notes "Introduced the WebAudio Procedural Synth Engine for SFX and per-stage dynamic BGM."
 
 echo "Done!"

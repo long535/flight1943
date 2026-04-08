@@ -1,6 +1,7 @@
 // GameScene.js  v5  – TileSprite BG + manual coord collision (guaranteed to work)
 import { ENEMY_DATA } from '../data/enemies.js';
 import { WAVES }       from '../data/levels.js';
+import { RetroAudio }  from '../audio/RetroAudio.js';
 
 const GAME_W = 360;
 const GAME_H = 640;
@@ -127,6 +128,7 @@ export default class GameScene extends Phaser.Scene {
     const bgKey = STAGE_BG[idx]||'bg_level1';
     this.bg.setTexture(bgKey);
     const [lbl,name]=STAGE_NAMES[idx]||['STAGE',''];
+    RetroAudio.startBGM(idx);
     this.gamePaused=true;
     const colors=[0x004488,0x003366,0x441100];
     const bar=this.add.rectangle(GAME_W/2,GAME_H/2,GAME_W,72,colors[idx]||0x003399,0.94).setDepth(30);
@@ -229,6 +231,7 @@ export default class GameScene extends Phaser.Scene {
           const dmg=b._type==='missile'?10:1;
           b.destroy();this.pBullets.splice(i,1);
           this.bossHP-=dmg; this.boss.hp=this.bossHP;
+          RetroAudio.playHit();
           this.flashTint(this.boss,0xff0000);
           this._checkBossDeath();
           hit=true;
@@ -245,6 +248,7 @@ export default class GameScene extends Phaser.Scene {
             const dmg=b._type==='missile'?8:1;
             b.destroy();this.pBullets.splice(i,1);
             e.hp-=dmg; this.flashTint(e,0xffffff);
+            RetroAudio.playHit();
             if(e.hp<=0)this.destroyEnemy(e,true);
             hit=true;break;
           }
@@ -259,6 +263,7 @@ export default class GameScene extends Phaser.Scene {
             const dmg=b._type==='missile'?8:1;
             b.destroy();this.pBullets.splice(i,1);
             go._hp-=dmg;
+            RetroAudio.playHit();
             this.flashTint(go,0xffffff);
             if(go._hp<=0){
               // Depot chain-explosion
@@ -482,6 +487,7 @@ export default class GameScene extends Phaser.Scene {
 
   _firePlayer(){
     if(this.playerDead)return;
+    RetroAudio.playShoot();
     const px=this.player.x,py=this.player.y-this.player.displayHeight*0.44;
     const s=(ox=0, vx=0)=>this._makePBullet(px+ox,py,vx,-750,'bullet');
     const lv=Math.min(this.weaponLevel,7);
@@ -712,6 +718,7 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
     this.energy-=bodily?28:20;
+    RetroAudio.playExplosion();
     this.cameras.main.shake(200,0.01);this.flashScreen(0xff0000,0.32);this.flashTint(this.player,0xff4400);
     this.combo=1;this.isInvincible=true;this.time.delayedCall(600,()=>this.isInvincible=false);
     if(this.energy<=0){
@@ -723,6 +730,7 @@ export default class GameScene extends Phaser.Scene {
 
   destroyEnemy(e,score=true){
     if(!e.active)return;
+    RetroAudio.playExplosion();
     this._explode(e.x,e.y);
     if(score){
       const pts=Math.round(e.points*this.combo);
@@ -774,6 +782,7 @@ export default class GameScene extends Phaser.Scene {
 
   collectPowerUp(pu){
     if(!pu.active)return;const type=pu.powerType;pu.destroy();
+    RetroAudio.playPowerup();
     this.flashScreen(0xffffff,0.15);this.cameras.main.shake(80,0.003);
     const px=this.player.x,py=this.player.y;
     switch(type){
@@ -867,7 +876,8 @@ export default class GameScene extends Phaser.Scene {
     });
   }
   _gameOver(){
-    this.playerDead=true;this.gamePaused=true;
+    this.playerDead=true;
+    RetroAudio.stopBGM();this.gamePaused=true;
     // Remove all input listeners so they don't interfere with GameOverScene
     this.input.keyboard.removeAllListeners();
     this.input.removeAllListeners();
