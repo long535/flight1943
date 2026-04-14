@@ -1,6 +1,6 @@
 {
   "name": "flight1943",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,6 +15,7 @@
     "@capacitor/android": "^8.3.0",
     "@capacitor/cli": "^7.6.1",
     "@capacitor/core": "^8.3.0",
+    "@capacitor/haptics": "^8.0.2",
     "phaser": "^3.90.0"
   }
 }

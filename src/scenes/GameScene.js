@@ -2,6 +2,7 @@
 import { ENEMY_DATA } from '../data/enemies.js';
 import { WAVES }       from '../data/levels.js';
 import { RetroAudio }  from '../audio/RetroAudio.js';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 const GAME_W = 360;
 const GAME_H = 640;
@@ -172,8 +173,9 @@ export default class GameScene extends Phaser.Scene {
     if(this.gamePaused||this.playerDead) return;
     const dt = delta/1000;
 
-    // Background seamless scroll
-    this.bg.tilePositionY -= this.bgSpeed + this.waveIndex*0.04;
+    // Background seamless scroll (frame-rate independent)
+    const currentBgSpd = (this.bgSpeed + this.waveIndex*0.04) * 60;
+    this.bg.tilePositionY -= currentBgSpd * dt;
 
     // Shield ring
     if(this.shieldActive){
@@ -526,8 +528,13 @@ export default class GameScene extends Phaser.Scene {
     this.eBullets.push(b);return b;
   }
 
+  // ── Haptic Wrapper ───────────────────────────────────────
+  _vibrate(style) {
+    try { Haptics.impact({ style }); } catch(err) {}
+  }
+
   _firePlayer(){
-    if(this.playerDead)return;
+    if(this.playerDead || this.gamePaused)return;
     RetroAudio.playShoot();
     const px=this.player.x,py=this.player.y-this.player.displayHeight*0.44;
     const s=(ox=0, vx=0)=>this._makePBullet(px+ox,py,vx,-750,'bullet');
@@ -553,7 +560,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   _fireMissile(){
-    if(this.playerDead || this.subWeaponType !== 'missile' || this.subWeaponLevel <= 0) return;
+    if(this.playerDead || this.gamePaused || this.subWeaponType !== 'missile' || this.subWeaponLevel <= 0) return;
     const targets = this.enemies.getChildren().filter(e=>e.active).concat(this.boss?.active ? [this.boss] : []);
     const fire = (ox) => {
         const b=this._makePBullet(this.player.x+ox,this.player.y-30,0,-650,'missile');
@@ -668,7 +675,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   _enemyFire(enemy,type){
-    if(!enemy?.active||this.playerDead)return;
+    if(!enemy?.active||this.playerDead||this.gamePaused)return;
     const data=ENEMY_DATA[type]||ENEMY_DATA.ka52;
     const spd=(data.bulletSpeed||260)*this.diffMult;
     const ex=enemy.x,ey=enemy.y+enemy.displayHeight*0.38;
@@ -958,8 +965,11 @@ export default class GameScene extends Phaser.Scene {
 
   _resumeFromStageComplete(){
     this.gamePaused=false;
+    this.cameras.main.fadeIn(400,0,0,0);
     // Reset per-stage perf stats
     this.maxCombo=1; this._bombsUsed=0; this._hitsReceived=0;
+    // Trigger next stage/wave immediately
+    this.waveTimer=99999;
     // Spawn 2 powerup rewards
     for(let i=0;i<2;i++){
       this.time.delayedCall(i*120,()=>{
@@ -975,6 +985,7 @@ export default class GameScene extends Phaser.Scene {
     if(this.isInvincible||this.playerDead)return;
     if(this.shieldActive){
       this.shieldActive=false;this._explode(this.player.x,this.player.y,0.7);
+      this._vibrate(ImpactStyle.Heavy);
       this.flashTint(this.player,0x00ccff);
       this.showFloatingText(this.player.x,this.player.y-35,'SHIELD BREAK!',0x00ccff);
       this.isInvincible=true;this.time.delayedCall(800,()=>this.isInvincible=false);
@@ -982,6 +993,7 @@ export default class GameScene extends Phaser.Scene {
     }
     this.energy-=bodily?28:20;
     this._hitsReceived++;
+    this._vibrate(ImpactStyle.Heavy);
     RetroAudio.playExplosion();
     this.cameras.main.shake(200,0.01);this.flashScreen(0xff0000,0.32);this.flashTint(this.player,0xff4400);
     this.combo=1;this.isInvincible=true;this.time.delayedCall(600,()=>this.isInvincible=false);
@@ -1084,6 +1096,7 @@ export default class GameScene extends Phaser.Scene {
     if(this.bombCount<=0){this.showFloatingText(GAME_W/2,GAME_H/2-20,'NO BOMBS!',0xff4444);return;}
     this.bombCount--;
     this._bombsUsed++;
+    this._vibrate(ImpactStyle.Heavy);
     this.showFloatingText(GAME_W/2,GAME_H/2,'💥 BOMB!',0xff8800);
     this.flashScreen(0xff8800,0.70);this.cameras.main.shake(500,0.020);
     this.enemies.getChildren().slice().forEach(e=>{this._explode(e.x,e.y,1.4);this.destroyEnemy(e,true);});

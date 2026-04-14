@@ -1,8 +1,12 @@
 #!/bin/bash
 set -e
 
-VERSION="v0.3.0"
-RELEASE_NOTES="v0.3.0 — Major gameplay update: 3 new enemy types (MiG-29, Bomber, Drone swarm), 4 new bullet patterns (Ring, Cannon, Laser, Wave), fully redesigned Boss AI with unique per-stage movement and attacks, Stage-Complete intermission screen with pixel-art backgrounds and S/A/B/C/D rating system, combo border glow, powerup attraction, and rubber-band difficulty system."
+VERSION="v0.3.1"
+RELEASE_NOTES="v0.3.1 Hotfix Details:
+- Fixed a bug where game audio loops (shooting) would continue playing during the intermission/stage clear screen.
+- Fixed an issue where the background would abruptly flash back to the previous level before transitioning properly.
+- Added Haptic Feedback (vibrations) on mobile devices for major events like taking damage, shield breaks, or using bombs.
+- Perfected the parallax scrolling algorithm for ground objects (tanks/AA guns) so they stick precisely to the scrolling background seamlessly."
 
 echo "Starting deployment process for $VERSION..."
 
