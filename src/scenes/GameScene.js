@@ -22,6 +22,8 @@ export default class GameScene extends Phaser.Scene {
     this.playerDead=false; this.bossActive=false;
     this.stageIndex=-1; this.killCount=0;
     this.waveIndex=0; this.waveTimer=0; this.waveDelay=2500;
+    // Per-stage performance tracking
+    this.maxCombo=1; this._bombsUsed=0; this._hitsReceived=0;
     // Bullet arrays (plain Image objects – no physics)
     this.pBullets=[]; this.eBullets=[];
     // Ground objects (middle layer)
@@ -36,6 +38,10 @@ export default class GameScene extends Phaser.Scene {
     // Boss
     this.boss=null; this.bossHP=0; this.bossMaxHPFull=1;
     this.bossPhase=1; this.bossMovDir=1; this.bossFireTimer=0;
+    this._bossSpecialTimer=0; this._bossDiveActive=false; this._bossFigure8T=0;
+    this.bossGuns=[];
+    // UI / QoL
+    this._warnActive=false; this._rubberTimer=0;
   }
 
   create() {
@@ -111,6 +117,11 @@ export default class GameScene extends Phaser.Scene {
 
     // ── Screen flash overlay ──────────────────────────────────
     this.screenFlash = this.add.rectangle(GAME_W/2,GAME_H/2,GAME_W,GAME_H,0,0).setDepth(28);
+    // ── Combo glow border (4 edge strips) ─────────────────
+    this._comboGlowTop   = this.add.rectangle(GAME_W/2,4,       GAME_W,8,0xffd700,0).setDepth(29);
+    this._comboGlowBot   = this.add.rectangle(GAME_W/2,GAME_H-4,GAME_W,8,0xffd700,0).setDepth(29);
+    this._comboGlowLeft  = this.add.rectangle(4,       GAME_H/2,8,GAME_H,0xffd700,0).setDepth(29);
+    this._comboGlowRight = this.add.rectangle(GAME_W-4, GAME_H/2,8,GAME_H,0xffd700,0).setDepth(29);
 
     // ── Registry ─────────────────────────────────────────────
     const reg={score:0,lives:3,energy:100,maxEnergy:100,combo:1,weapon:1,missiles:0,bombs:0,bossHP:0,bossMaxHP:1,bossActive:false};
@@ -185,9 +196,17 @@ export default class GameScene extends Phaser.Scene {
       }
     });
 
-    // Update Power-ups (Manual Coordinate Math for Perfect 4-Wall Bounce)
+    // Update Power-ups (bounce + player attraction within 70px)
     this.powerUpGroup.getChildren().forEach(p => {
       if(!p.active) return;
+      // Gentle attraction when close
+      const pdx=this.player.x-p.x, pdy=this.player.y-p.y;
+      const pdist=Math.sqrt(pdx*pdx+pdy*pdy);
+      if(pdist<70&&pdist>1){
+        const pull=180;
+        p._vx+=((pdx/pdist)*pull)*dt;
+        p._vy+=((pdy/pdist)*pull)*dt;
+      }
       p.x += p._vx * dt;
       p.y += p._vy * dt;
       if (p.x <= 11) { p.x = 11; p._vx *= -1; }
@@ -331,6 +350,23 @@ export default class GameScene extends Phaser.Scene {
       if(this._dist(pu.x,pu.y,px,py)<24){this.collectPowerUp(pu);break;}
     }
 
+    // ── Combo border glow ────────────────────────────────
+    if(this._comboGlowTop){
+      const ca=this.combo>=4?Math.min((this.combo-3)/5,1)*0.75:0;
+      const cc=this.combo>=8?0xff2200:this.combo>=6?0xff6600:0xffd700;
+      const pulse=0.55+Math.sin(time*0.006)*0.45;
+      [this._comboGlowTop,this._comboGlowBot,this._comboGlowLeft,this._comboGlowRight].forEach(g=>{
+        g.setFillStyle(cc,ca*pulse);
+      });
+    }
+    // ── Rubber-band difficulty ───────────────────────────
+    this._rubberTimer+=delta;
+    if(this._rubberTimer>=30000){
+      this._rubberTimer=0;
+      const energyPct=this.energy/this.maxEnergy;
+      if(energyPct>0.70&&this.combo>5) this.diffMult=Math.min(this.diffMult+0.08,3.0);
+      else if(energyPct<0.30)          this.diffMult=Math.max(this.diffMult-0.06,1.0);
+    }
     // Registry sync
     this.registry.set('score',this.score);this.registry.set('combo',this.combo);
     this.registry.set('energy',Math.floor(this.energy));this.registry.set('weapon',this.weaponLevel);
@@ -377,9 +413,14 @@ export default class GameScene extends Phaser.Scene {
     go._fireTimer   = Phaser.Math.Between(1500,3000);
     go._fireInterval= (type==='aa_gun'||type==='ship')?2200:3500;
     this.groundObjs.push(go);
-    // Completely static ground presence (no horizontal drifting)
-    if(type==='tank'||type==='ship'){
-      // They will rigidly match the background scroll speed
+    // Ship: gentle side-to-side sway
+    if(type==='ship'){
+      const targetX=Phaser.Math.Clamp(x+Phaser.Math.Between(-45,45),22,GAME_W-22);
+      this.tweens.add({targets:go,x:targetX,duration:Phaser.Math.Between(1800,2800),yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+    }
+    // Tank: slight wobble
+    if(type==='tank'){
+      this.tweens.add({targets:go,x:x+Phaser.Math.Between(-8,8),duration:Phaser.Math.Between(900,1400),yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
     }
     return go;
   }
@@ -387,7 +428,7 @@ export default class GameScene extends Phaser.Scene {
   _updateGroundObjs(delta){
     if(this.gamePaused)return;
     const dt=delta/1000;
-    const spd=(this.bgSpeed+this.waveIndex*0.04)*62; // match terrain scroll in px/s
+    const spd=(this.bgSpeed+this.waveIndex*0.04)*60; // match terrain scroll in px/s
     for(let i=this.groundObjs.length-1;i>=0;i--){
       const go=this.groundObjs[i];
       if(!go||!go.scene){this.groundObjs.splice(i,1);continue;}
@@ -527,20 +568,30 @@ export default class GameScene extends Phaser.Scene {
   //  WAVES & ENEMIES
   // ─────────────────────────────────────────────────────────
   _spawnNextWave(){
-    if(this.waveIndex>=WAVES.length) {
-      // Loop the entire game for infinite play, increasing difficulty
-      this.waveIndex = 0;
-      this.diffMult += 0.2; 
+    if(this.waveIndex>=WAVES.length){
+      this.waveIndex=0; this.diffMult+=0.2;
     }
     const wave=WAVES[this.waveIndex];this.waveDelay=wave.delay;this.waveIndex++;
     if(wave.stage!==undefined&&wave.stage!==this.stageIndex)this._transitionStage(wave.stage);
     if(wave.type==='boss'){this._spawnBoss(wave);return;}
+    const showWarn=wave.warning||(wave.count||0)>=15;
+    if(showWarn)this._showIncomingWarning();
     const cnt=Math.ceil((wave.count||3)*this.diffMult*1.5);
-    for(let i=0;i<cnt;i++)this.time.delayedCall(i*(wave.spawnGap||350),()=>{
+    const delay0=showWarn?1600:0;
+    for(let i=0;i<cnt;i++)this.time.delayedCall(delay0+i*(wave.spawnGap||350),()=>{
       if(this.scene.isActive('GameScene'))this._spawnEnemy(wave.enemy||'ka52',wave.pattern||'line',i,cnt);
     });
-    // Spawn ambient powerup INSIDE bounds so it bounces properly
-    if(Math.random()<0.1)this.time.delayedCall(2200,()=>this._spawnPU(Phaser.Math.Between(40,GAME_W-40), 20));
+    if(Math.random()<0.1)this.time.delayedCall(2200,()=>this._spawnPU(Phaser.Math.Between(40,GAME_W-40),20));
+  }
+
+  _showIncomingWarning(){
+    if(this._warnActive)return;
+    this._warnActive=true;
+    const bar=this.add.rectangle(GAME_W/2,GAME_H*0.5,GAME_W,42,0x440000,0.92).setDepth(30);
+    const lbl=this.add.text(GAME_W/2,GAME_H*0.5,'⚠  INCOMING  ⚠',
+      {fontFamily:'monospace',fontSize:'14px',color:'#ff3300',stroke:'#000',strokeThickness:3}).setOrigin(0.5).setDepth(31);
+    this.tweens.add({targets:[bar,lbl],alpha:{from:1,to:0.1},duration:180,yoyo:true,repeat:5,
+      onComplete:()=>{bar.destroy();lbl.destroy();this._warnActive=false;}});
   }
 
   _ambientSpawn(){
@@ -554,26 +605,63 @@ export default class GameScene extends Phaser.Scene {
 
   _spawnEnemy(type,pattern,idx,total){
     const data=ENEMY_DATA[type]||ENEMY_DATA.ka52;
-    let x,sy=-55;
+    // ── BOMBER: lateral side entry ─────────────────────────────
+    if(data.lateral){
+      const fromLeft=Phaser.Math.Between(0,1)===0;
+      const sy=Phaser.Math.Between(GAME_H*0.12,GAME_H*0.42);
+      const sx=fromLeft?-90:GAME_W+90;
+      const texW=this.textures.get(data.texture||'enemy_mi24').getSourceImage().width;
+      const sc=(data.sizePx||72)/texW;
+      const e=this.physics.add.image(sx,sy,data.texture||'enemy_mi24')
+        .setScale(sc).setDepth(5).setFlipY(fromLeft?false:true);
+      e.body.allowGravity=false;
+      e.body.setVelocity(fromLeft?55:-55,14);
+      e.hp=Math.ceil((data.hp||14)*this.diffMult);e.maxHp=e.hp;
+      e.points=data.points||800;e.eType=type;e.dropChance=data.dropChance||0.22;
+      const fd=(data.fireDelay||2600)*(this.difficulty==='hard'?0.5:0.75);
+      this.time.addEvent({delay:fd,callback:()=>this._enemyFire(e,type),callbackScope:this,loop:true,startAt:900});
+      this.enemies.add(e);
+      return;
+    }
+    // ── Standard spawn position ────────────────────────────────
+    let x,sy=-65;
     if(pattern==='line')x=(GAME_W/(total+1))*(idx+1);
-    else if(pattern==='vshape'){x=GAME_W/2+(idx-total/2)*55;sy=-55-Math.abs(idx-total/2)*28;}
+    else if(pattern==='vshape'){x=GAME_W/2+(idx-total/2)*55;sy=-65-Math.abs(idx-total/2)*28;}
     else x=Phaser.Math.Between(30,GAME_W-30);
     const texW=this.textures.get(data.texture||'enemy_ka52').getSourceImage().width;
     const sc=(data.sizePx||44)/texW;
     const e=this.physics.add.image(x,sy,data.texture||'enemy_ka52').setScale(sc).setDepth(5).setFlipY(true);
     e.body.allowGravity=false;e.body.setVelocityY(data.speed||120);
     e.hp=Math.ceil((data.hp||2)*this.diffMult);e.maxHp=e.hp;
-    e.points=data.points||100;e.eType=type;e.dropChance=0.25;
-    if(data.zigzag)this.tweens.add({targets:e,x:x+(idx%2===0?55:-55),duration:1100,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
-    if(type==='shahed'){
-      this.time.delayedCall(600,()=>{
+    e.points=data.points||100;e.eType=type;e.dropChance=data.dropChance||0.05;
+    // ── MiG-29: fast entry + horizontal dash ───────────────────
+    if(data.dash){
+      this.time.delayedCall(650,()=>{
+        if(!e.active)return;
+        this.tweens.add({targets:e,x:Phaser.Math.Between(50,GAME_W-50),duration:380,ease:'Quad.easeInOut'});
+        this.time.delayedCall(1000,()=>{
+          if(!e.active)return;
+          this.tweens.add({targets:e,x:Phaser.Math.Between(30,GAME_W-30),duration:300,ease:'Quad.easeIn'});
+        });
+      });
+    // ── Drone: sin-wave horizontal oscillation ─────────────────
+    } else if(data.sinWave){
+      const amp=Phaser.Math.Between(55,110);
+      const offX=idx%2===0?amp:-amp;
+      this.tweens.add({targets:e,x:x+offX,duration:Phaser.Math.Between(600,900),yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+    } else if(data.zigzag){
+      this.tweens.add({targets:e,x:x+(idx%2===0?55:-55),duration:1100,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+    }
+    // ── Kamikaze targeting ─────────────────────────────────────
+    if(type==='shahed'||type==='drone'){
+      this.time.delayedCall(type==='drone'?400:600,()=>{
         if(!e.active||!this.player?.active)return;
         const ang=Math.atan2(this.player.y-e.y,this.player.x-e.x)*180/Math.PI;
-        this.physics.velocityFromAngle(ang,240,e.body.velocity);
+        this.physics.velocityFromAngle(ang,type==='drone'?210:240,e.body.velocity);
       });
     } else {
-      const fireDelayMult = this.difficulty === 'hard' ? 0.25 : 0.5;
-      const fd = (data.fireDelay||2500) * fireDelayMult;
+      const fireDelayMult=this.difficulty==='hard'?0.25:0.5;
+      const fd=(data.fireDelay||2500)*fireDelayMult;
       this.time.addEvent({delay:fd+Phaser.Math.Between(0,600),callback:()=>this._enemyFire(e,type),callbackScope:this,loop:true,startAt:Phaser.Math.Between(200,800)});
     }
     this.enemies.add(e);
@@ -584,14 +672,56 @@ export default class GameScene extends Phaser.Scene {
     const data=ENEMY_DATA[type]||ENEMY_DATA.ka52;
     const spd=(data.bulletSpeed||260)*this.diffMult;
     const ex=enemy.x,ey=enemy.y+enemy.displayHeight*0.38;
+    const aimed=()=>Math.atan2(this.player.y-ey,this.player.x-ex)*180/Math.PI;
     switch(data.bulletPattern||'straight'){
       case 'straight':this._makeEBullet(ex,ey,90,spd);break;
       case 'spread3':[-14,0,14].forEach(o=>this._makeEBullet(ex,ey,90+o,spd));break;
-      case 'aimed':
-      case 'spiral':{
-        const a=Math.atan2(this.player.y-ey,this.player.x-ex)*180/Math.PI;
-        if(data.bulletPattern==='spiral')[-18,0,18].forEach(o=>this._makeEBullet(ex,ey,a+o,spd));
-        else this._makeEBullet(ex,ey,a,spd);
+      case 'aimed':this._makeEBullet(ex,ey,aimed(),spd);break;
+      case 'spiral':[-18,0,18].forEach(o=>this._makeEBullet(ex,ey,aimed()+o,spd));break;
+      // Ring: bullets in all directions equally spaced
+      case 'ring':{
+        const n=10;
+        for(let i=0;i<n;i++)this._makeEBullet(ex,ey,(i/n)*360,spd*0.85);
+        break;
+      }
+      // Cannon: arcing shell that explodes on landing
+      case 'cannon':{
+        const a=aimed();
+        const shell=this._makeEBullet(ex,ey,a,spd*0.7,1.4);
+        this.time.addEvent({delay:80,loop:true,callback:()=>{
+          if(!shell||!shell.scene)return;
+          shell._vy+=20;
+          if(shell.y>GAME_H-50||this._dist(shell.x,shell.y,this.player.x,this.player.y)<50){
+            const sx=shell.x,sy=shell.y;
+            if(shell.scene)shell.destroy();
+            this._explode(sx,sy,1.8);
+            if(!this.playerDead&&!this.isInvincible&&this._dist(sx,sy,this.player.x,this.player.y)<55)
+              this._damagePlayer(false);
+          }
+        }});
+        break;
+      }
+      // Laser: charge-up flash then super-fast beam
+      case 'laser':{
+        const flash=this.add.circle(ex,ey,12,0xff0000,0.7).setDepth(7);
+        this.tweens.add({targets:flash,scaleX:2,scaleY:2,alpha:0.1,duration:550,onComplete:()=>{
+          flash.destroy();
+          if(!enemy?.active)return;
+          const a=aimed();
+          for(let i=0;i<3;i++)this._makeEBullet(ex,ey,a+i*3-3,940,0.9);
+        }});
+        break;
+      }
+      // Wave: staggered shots with sinusoidal angle offset
+      case 'wave':{
+        const a=aimed();
+        for(let i=0;i<5;i++){
+          const off=Math.sin((i/5)*Math.PI*2)*28;
+          this.time.delayedCall(i*90,()=>{
+            if(!enemy?.active)return;
+            this._makeEBullet(ex,ey,a+off,spd*0.9);
+          });
+        }
         break;
       }
     }
@@ -623,44 +753,157 @@ export default class GameScene extends Phaser.Scene {
   }
   _updateBoss(delta){
     if(!this.boss?.active)return;
-    this.bossFireTimer+=delta;
-    
-    // speed modifiers base on phase
-    let spd = 1.2;
-    if(this.bossWaveData.phases) {
-        spd += (this.bossPhase-1)*0.7; 
-    }
-    this.boss.x+=this.bossMovDir*spd;
-    if(this.boss.x>GAME_W-70||this.boss.x<70)this.bossMovDir*=-1;
-    
-    const iv=Math.max(200, 1100 - (this.bossPhase-1)*300 - (this.stageIndex*80));
-    if(this.bossFireTimer>=iv){this.bossFireTimer=0;this._bossFire();}
-  }
-  _bossFire(){
-    if(!this.boss?.active)return;
-    const bx=this.boss.x,by=this.boss.y+this.boss.displayHeight*0.4;
-    
-    if(this.stageIndex===1 && this.bossPhase===2) { // Nuclear submarine
-       // 1. Slow, brutal straight laser beam barrage downward
-       for(let i=-5;i<=5;i+=2)this._makeEBullet(bx+i*6,by,90, 520, 1.8);
-       // 2. Slow aimed spread shots
-       const a=Math.atan2(this.player.y-by,this.player.x-bx)*180/Math.PI;
-       [-20,0,20].forEach(o=>this._makeEBullet(bx,by,a+o,260,1.3));
-    } else if(this.stageIndex===2 && this.bossPhase===2) { // Fortress
-       for(let i=0;i<10;i++)this._makeEBullet(bx,by,(i/10)*360 + this.boss.x,215,1.3);
-       for(let i=-2;i<=2;i++)this._makeEBullet(bx+i*50,by,90, 300, 1.2);
-    } else if(this.stageIndex===2 && this.bossPhase===3) { // Core
-       for(let i=0;i<12;i++)this._makeEBullet(bx,by,(i/12)*360 - this.boss.x,315,1.5);
-       const a=Math.atan2(this.player.y-by,this.player.x-bx)*180/Math.PI;
-       [-15,0,15].forEach(o=>this._makeEBullet(bx,by,a+o,335,1.3));
-    } else { // Generic patterns Phase 1
-      if(this.bossPhase===1){
-        for(let i=-2;i<=2;i++)this._makeEBullet(bx,by,90+i*16,290+i*8,1.3);
-      } else {
-        for(let i=0;i<8;i++)this._makeEBullet(bx,by,(i/8)*360,215,1.3);
-        const a=Math.atan2(this.player.y-by,this.player.x-bx)*180/Math.PI;
-        [-10,10].forEach(o=>this._makeEBullet(bx,by,a+o,335,1.3));
+    this.bossFireTimer    +=delta;
+    this._bossSpecialTimer+=delta;
+    const bossType=this.bossWaveData?.phases
+      ?(this.bossWaveData.phaseData[this.bossPhase-1]?.bossType||'generic')
+      :(this.bossWaveData?.bossType||'generic');
+
+    switch(bossType){
+      // TU-22M: L/R + dive attack every 7s
+      case 'tu22m':{
+        const spd=1.4+(this.bossPhase-1)*0.5;
+        this.boss.x+=this.bossMovDir*spd;
+        if(this.boss.x>GAME_W-70||this.boss.x<70)this.bossMovDir*=-1;
+        if(this._bossSpecialTimer>7000&&!this._bossDiveActive){
+          this._bossSpecialTimer=0;this._bossDiveActive=true;
+          const tx=this.player?.x||GAME_W/2;
+          this.tweens.add({targets:this.boss,x:tx,y:GAME_H*0.55,duration:600,ease:'Quad.easeIn',
+            onComplete:()=>{
+              for(let i=-2;i<=2;i++)this._makeEBullet(this.boss.x+i*20,this.boss.y+30,90,210,1.2);
+              this.tweens.add({targets:this.boss,y:GAME_H*0.2,duration:900,ease:'Back.easeOut',
+                onComplete:()=>{this._bossDiveActive=false;}});
+            }});
+        }
+        break;
       }
+      // Moskva: slow sweep + periodic broadside salvo
+      case 'moskva':{
+        this.boss.x+=this.bossMovDir*0.8;
+        if(this.boss.x>GAME_W-60||this.boss.x<60)this.bossMovDir*=-1;
+        if(this._bossSpecialTimer>6000){
+          this._bossSpecialTimer=0;
+          const side=this.bossMovDir>0?1:-1;
+          for(let i=0;i<6;i++){
+            this.time.delayedCall(i*110,()=>{
+              if(this.boss?.active)this._makeEBullet(this.boss.x+side*55,this.boss.y+40,90+side*18,285,1.1);
+            });
+          }
+        }
+        break;
+      }
+      // Belgorod submarine: pace + periodic dive & reappear
+      case 'belgorod':{
+        if(!this._bossDiveActive){
+          this.boss.x+=this.bossMovDir*0.9;
+          if(this.boss.x>GAME_W-60||this.boss.x<60)this.bossMovDir*=-1;
+        }
+        if(this._bossSpecialTimer>8000&&!this._bossDiveActive){
+          this._bossSpecialTimer=0;this._bossDiveActive=true;
+          this.tweens.add({targets:this.boss,y:GAME_H+150,duration:1100,ease:'Quad.easeIn',
+            onComplete:()=>{
+              if(!this.boss?.active)return;
+              this.boss.setPosition(Phaser.Math.Between(80,GAME_W-80),-130);
+              this.tweens.add({targets:this.boss,y:GAME_H*0.2,duration:1000,ease:'Back.easeOut',
+                onComplete:()=>{
+                  this._bossDiveActive=false;
+                  for(let i=0;i<8;i++)this._makeEBullet(this.boss.x,this.boss.y,(i/8)*360,235,1.2);
+                }});
+            }});
+        }
+        break;
+      }
+      // Ground Silo: nearly static gentle sway + mine drops
+      case 'silo':{
+        this.boss.x=GAME_W/2+Math.sin(this.bossFireTimer*0.001)*45;
+        if(this._bossSpecialTimer>5000){
+          this._bossSpecialTimer=0;
+          for(let i=0;i<4;i++){
+            this.time.delayedCall(i*180,()=>{
+              if(this.boss?.active)this._makeEBullet(
+                Phaser.Math.Between(30,GAME_W-30),this.boss.y+20,90,155,1.5);
+            });
+          }
+        }
+        break;
+      }
+      // Flying Fortress: figure-8 orbit
+      case 'fortress':{
+        this._bossFigure8T+=delta*0.0008*(1+(this.bossPhase-1)*0.4);
+        const t=this._bossFigure8T;
+        this.boss.x=GAME_W/2+Math.sin(t)*120;
+        this.boss.y=GAME_H*0.2+Math.sin(t*2)*50;
+        break;
+      }
+      // Exposed Core: fast erratic + 3s teleport
+      case 'core':{
+        this.boss.x+=this.bossMovDir*3.0;
+        if(this.boss.x>GAME_W-55||this.boss.x<55)this.bossMovDir*=-1;
+        if(this._bossSpecialTimer>3000){
+          this._bossSpecialTimer=0;
+          this.boss.setAlpha(0);
+          this.time.delayedCall(200,()=>{
+            if(!this.boss?.active)return;
+            this.boss.setPosition(Phaser.Math.Between(55,GAME_W-55),GAME_H*0.15+Phaser.Math.Between(-20,20));
+            this.tweens.add({targets:this.boss,alpha:1,duration:150});
+          });
+        }
+        break;
+      }
+      default:{
+        const spd=1.2+(this.bossPhase-1)*0.7;
+        this.boss.x+=this.bossMovDir*spd;
+        if(this.boss.x>GAME_W-70||this.boss.x<70)this.bossMovDir*=-1;
+      }
+    }
+    const iv=Math.max(180,1100-(this.bossPhase-1)*300-(this.stageIndex*80));
+    if(this.bossFireTimer>=iv){this.bossFireTimer=0;this._bossFire(bossType);}
+  }
+
+  _bossFire(bossType){
+    if(!this.boss?.active)return;
+    const bx=this.boss.x,by=this.boss.y+this.boss.displayHeight*0.38;
+    const aimed=()=>Math.atan2(this.player.y-by,this.player.x-bx)*180/Math.PI;
+    switch(bossType){
+      case 'tu22m':
+        for(let i=-3;i<=3;i++)this._makeEBullet(bx,by,90+i*14,305+Math.abs(i)*5,1.3);
+        this._makeEBullet(bx,by,aimed(),345,1.2);
+        break;
+      case 'moskva':
+        this._makeEBullet(bx,by,aimed(),245,1.3);
+        [-24,0,24].forEach(o=>this._makeEBullet(bx+o*3,by,90,305,1.1));
+        break;
+      case 'belgorod':
+        for(let i=-4;i<=4;i+=2)this._makeEBullet(bx+i*7,by,90,520,1.8);
+        [-20,0,20].forEach(o=>this._makeEBullet(bx,by,aimed()+o,265,1.3));
+        break;
+      case 'silo':{
+        // Homing missile cluster (uses the eBullets array + live steering)
+        for(let i=0;i<3;i++){
+          const m=this._makeEBullet(bx+(i-1)*30,by,aimed(),180,1.1);
+          this.time.addEvent({delay:60,repeat:20,callback:()=>{
+            if(!m?.scene||!this.player?.active)return;
+            const a=Math.atan2(this.player.y-m.y,this.player.x-m.x);
+            m._vx=Math.cos(a)*320;m._vy=Math.sin(a)*320;
+          }});
+        }
+        break;
+      }
+      case 'fortress':
+        for(let i=0;i<10;i++)this._makeEBullet(bx,by,(i/10)*360+this.boss.x,220,1.3);
+        [-22,0,22].forEach(o=>this._makeEBullet(bx,by,aimed()+o,305,1.2));
+        break;
+      case 'core':
+        for(let i=0;i<12;i++)this._makeEBullet(bx,by,(i/12)*360-this.boss.x,335,1.5);
+        [-12,0,12].forEach(o=>this._makeEBullet(bx,by,aimed()+o,365,1.3));
+        break;
+      default:
+        if(this.bossPhase===1){
+          for(let i=-2;i<=2;i++)this._makeEBullet(bx,by,90+i*16,290,1.3);
+        } else {
+          for(let i=0;i<8;i++)this._makeEBullet(bx,by,(i/8)*360,215,1.3);
+          [-10,10].forEach(o=>this._makeEBullet(bx,by,aimed()+o,335,1.3));
+        }
     }
   }
 
@@ -691,18 +934,38 @@ export default class GameScene extends Phaser.Scene {
     });
     this.time.delayedCall(1700,()=>{
       this.boss?.destroy();this.boss=null;this.bossActive=false;this.registry.set('bossActive',false);
-      
-      // Clear ALL remaining enemies and enemy bullets precisely upon boss victory
       this.enemies.getChildren().slice().forEach(e=>this.destroyEnemy(e,false));
       this.eBullets.forEach(b=>{if(b.scene)b.destroy();});this.eBullets=[];
-      
-      // Spawn 2 powerups randomly
-      for(let i=0;i<2;i++){
-        this.time.delayedCall(i*120, () => {
-          this._spawnPU(Phaser.Math.Between(40, GAME_W-40), Phaser.Math.Between(80, GAME_H*0.4));
+      // Brief pause then launch intermission
+      this.time.delayedCall(900,()=>{
+        this.gamePaused=true;
+        const isLastStage=this.stageIndex>=2;
+        this.scene.launch('StageCompleteScene',{
+          stageIndex:   this.stageIndex,
+          score:        this.score,
+          killCount:    this.killCount,
+          maxCombo:     this.maxCombo,
+          hitsReceived: this._hitsReceived,
+          bombsUsed:    this._bombsUsed,
+          livesLost:    3-this.lives,
+          energy:       this.energy,
+          difficulty:   this.difficulty,
+          isGameClear:  isLastStage
         });
-      }
+      });
     });
+  }
+
+  _resumeFromStageComplete(){
+    this.gamePaused=false;
+    // Reset per-stage perf stats
+    this.maxCombo=1; this._bombsUsed=0; this._hitsReceived=0;
+    // Spawn 2 powerup rewards
+    for(let i=0;i<2;i++){
+      this.time.delayedCall(i*120,()=>{
+        this._spawnPU(Phaser.Math.Between(40,GAME_W-40),Phaser.Math.Between(80,GAME_H*0.4));
+      });
+    }
   }
 
   // ─────────────────────────────────────────────────────────
@@ -718,6 +981,7 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
     this.energy-=bodily?28:20;
+    this._hitsReceived++;
     RetroAudio.playExplosion();
     this.cameras.main.shake(200,0.01);this.flashScreen(0xff0000,0.32);this.flashTint(this.player,0xff4400);
     this.combo=1;this.isInvincible=true;this.time.delayedCall(600,()=>this.isInvincible=false);
@@ -732,13 +996,18 @@ export default class GameScene extends Phaser.Scene {
     if(!e.active)return;
     RetroAudio.playExplosion();
     this._explode(e.x,e.y);
+    // Drone: death ring burst of 8 bullets
+    if(e.eType==='drone'){
+      for(let i=0;i<8;i++)this._makeEBullet(e.x,e.y,(i/8)*360,180,0.85);
+    }
     if(score){
       const pts=Math.round(e.points*this.combo);
       this._scoreAdd(pts);this.combo=Math.min(this.combo+1,8);this.killCount++;
+      if(this.combo>this.maxCombo)this.maxCombo=this.combo;;
       this.showFloatingText(e.x,e.y-12,`+${pts}`,this.combo>3?0xff8800:0xffffff);
       if(this.killCount%30===0)this._spawnPU(e.x,e.y-20);
     }
-    if(score && Math.random()<e.dropChance)this._spawnPU(e.x,e.y);
+    if(score&&Math.random()<(e.dropChance||0.05))this._spawnPU(e.x,e.y);
     e.destroy();
   }
 
@@ -814,6 +1083,7 @@ export default class GameScene extends Phaser.Scene {
     if(this.playerDead||this.gamePaused)return;
     if(this.bombCount<=0){this.showFloatingText(GAME_W/2,GAME_H/2-20,'NO BOMBS!',0xff4444);return;}
     this.bombCount--;
+    this._bombsUsed++;
     this.showFloatingText(GAME_W/2,GAME_H/2,'💥 BOMB!',0xff8800);
     this.flashScreen(0xff8800,0.70);this.cameras.main.shake(500,0.020);
     this.enemies.getChildren().slice().forEach(e=>{this._explode(e.x,e.y,1.4);this.destroyEnemy(e,true);});

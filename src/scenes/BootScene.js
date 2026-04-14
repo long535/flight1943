@@ -75,6 +75,10 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('powerup_wingman', '/assets/sprites/powerup_wingman.png');
     // Cloud (Layer 3)
     this.load.image('cloud_img', '/assets/sprites/cloud.png');
+    // Stage-complete intermission backgrounds (pixel-art girls)
+    this.load.image('stage_clear_bg0', '/assets/backgrounds/stage_clear_0.png');
+    this.load.image('stage_clear_bg1', '/assets/backgrounds/stage_clear_1.png');
+    this.load.image('stage_clear_bg2', '/assets/backgrounds/stage_clear_2.png');
 
   }
 

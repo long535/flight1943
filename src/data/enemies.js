@@ -2,7 +2,7 @@
 export const ENEMY_DATA = {
   ka52: {
     texture: 'enemy_ka52',
-    sizePx: 48,          // rendered width in game pixels
+    sizePx: 48,
     hp: 2,
     speed: 115,
     points: 150,
@@ -27,7 +27,7 @@ export const ENEMY_DATA = {
     dropChance: 0.12
   },
   su34: {
-    texture: 'enemy_ka52',  // reuse; unique art in full game
+    texture: 'enemy_ka52',
     sizePx: 44,
     hp: 3,
     speed: 145,
@@ -60,5 +60,52 @@ export const ENEMY_DATA = {
     fireDelay: 1100,
     zigzag: false,
     dropChance: 0.10
+  },
+
+  // ── NEW ENEMY TYPES ──────────────────────────────────────
+
+  // MiG-29: High-speed strafing fighter – dashes across screen then loops back
+  mig29: {
+    texture: 'enemy_ka52',
+    sizePx: 42,
+    hp: 2,
+    speed: 280,          // very fast vertical entry
+    points: 300,
+    bulletPattern: 'aimed',
+    bulletColor: 0xff2200,
+    bulletSpeed: 380,
+    fireDelay: 1400,
+    zigzag: false,
+    dash: true,          // custom flag: triggers horizontal dash behaviour
+    dropChance: 0.06
+  },
+
+  // Heavy Bomber: slow, tanky, enters from the side, drops cannon shells
+  bomber: {
+    texture: 'enemy_mi24',
+    sizePx: 72,
+    hp: 14,
+    speed: 0,            // doesn't descend – moves horizontally
+    points: 800,
+    bulletPattern: 'cannon',
+    bulletColor: 0xff8800,
+    bulletSpeed: 180,
+    fireDelay: 2600,
+    zigzag: false,
+    lateral: true,       // custom flag: side-entry horizontal movement
+    dropChance: 0.22
+  },
+
+  // Drone Swarm: sin-wave kamikaze cluster – explodes in ring on death
+  drone: {
+    texture: 'enemy_shahed',
+    sizePx: 30,
+    hp: 1,
+    speed: 100,
+    points: 120,
+    bulletPattern: null,  // kamikaze + death ring
+    dropChance: 0.03,
+    deathRing: true,      // custom flag: fires ring burst on destroy
+    sinWave: true         // custom flag: sin-wave movement
   }
 };

@@ -20,11 +20,23 @@ dist-ssr
 *.suo
 *.ntvs*
 *.sw?
-.DS_Store
 
 # Android and Security rules
 android/
 *.jks
 *.keystore
+*.p12
 .env
 .env.*
+
+# Google services / API keys
+google-services.json
+GoogleService-Info.plist
+
+# Local machine config (contains SDK paths)
+local.properties
+android/local.properties
+
+# Build outputs
+*.apk
+*.aab

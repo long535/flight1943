@@ -1,7 +1,10 @@
 #!/bin/bash
 set -e
 
-echo "Starting deployment process..."
+VERSION="v0.3.0"
+RELEASE_NOTES="v0.3.0 — Major gameplay update: 3 new enemy types (MiG-29, Bomber, Drone swarm), 4 new bullet patterns (Ring, Cannon, Laser, Wave), fully redesigned Boss AI with unique per-stage movement and attacks, Stage-Complete intermission screen with pixel-art backgrounds and S/A/B/C/D rating system, combo border glow, powerup attraction, and rubber-band difficulty system."
+
+echo "Starting deployment process for $VERSION..."
 
 # Enforce Android SDK Location
 export ANDROID_HOME=/home/vibecodingvm/Android/Sdk
@@ -25,12 +28,15 @@ echo "APK successfully built."
 
 echo "Configuring Git..."
 git add .
-git commit -m "Release Flight 1943 v0.2.3" || true
+git commit -m "Release Frontline 1943 $VERSION" || true
 
 echo "Deploying to GitHub..."
 git push -u origin main || true
 
 echo "Creating GitHub Release..."
-gh release create v0.2.3 android/app/build/outputs/apk/debug/app-debug.apk --title "Flight 1943 v0.2.3" --notes "Introduced the WebAudio Procedural Synth Engine for SFX and per-stage dynamic BGM."
+gh release create $VERSION \
+  android/app/build/outputs/apk/debug/app-debug.apk \
+  --title "Frontline 1943 $VERSION" \
+  --notes "$RELEASE_NOTES"
 
-echo "Done!"
+echo "Done! Released $VERSION"
