@@ -1,12 +1,11 @@
 #!/bin/bash
 set -e
 
-VERSION="v0.3.4"
-RELEASE_NOTES="v0.3.4 SU-57 Stealth Update & Fixes:
-- **New Air Force Enemy**: Introducing the Su-57 Stealth Fighter. It slices horizontally through the screen at high speeds and fires a wide shotgun spread.
-- **Stage Progression Fix**: Fixed a critical memory leak that caused the game to freeze when clicking 'Start Battle' after returning to the main menu from a game over.
-- **Cinematic Bombing Run**: Drastically slowed down the visual sweep of the drone strike (from 0.9s to 1.8s) and added new thruster SFX before the mega explosion for a more epic feel.
-- Added various Stage 1 and Stage 2 wave rebalances to include the new Su-57 fighters."
+VERSION="v0.3.5"
+RELEASE_NOTES="v0.3.5 The Bullet Hell Update:
+- **Massive Enemy Swarms**: Enemy counts across all waves in Stage 1 and Stage 2 have been multiplied by 10x! The spawn gaps have been incredibly shortened to create a true adrenaline-pumping bullet hell experience.
+- **Visual Polish**: Removed solid background artifacts from the new Su-57 aircraft and Kamikaze Bomb drones. They now blend flawlessly with the environment.
+- **Bug Fix**: Addressed a missing file path logic loop causing bomb drones to fail rendering."
 
 echo "Starting deployment process for $VERSION..."
 
