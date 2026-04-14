@@ -90,6 +90,7 @@ export default class UIScene extends Phaser.Scene {
 
     // ── Registry listeners ──────────────────────────────────
     this.registry.events.on('changedata', this.onRegistryChange, this);
+    this.events.on('shutdown', this.shutdown, this); // Clean up on stop
     // Initial state
     this.onRegistryChange(null, 'score', 0);
   }

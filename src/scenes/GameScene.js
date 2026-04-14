@@ -622,7 +622,8 @@ export default class GameScene extends Phaser.Scene {
       const e=this.physics.add.image(sx,sy,data.texture||'enemy_mi24')
         .setScale(sc).setDepth(5).setFlipY(fromLeft?false:true);
       e.body.allowGravity=false;
-      e.body.setVelocity(fromLeft?55:-55,14);
+      const spdLat = data.speed || 55;
+      e.body.setVelocity(fromLeft ? spdLat : -spdLat, 14);
       e.hp=Math.ceil((data.hp||14)*this.diffMult);e.maxHp=e.hp;
       e.points=data.points||800;e.eType=type;e.dropChance=data.dropChance||0.22;
       const fd=(data.fireDelay||2600)*(this.difficulty==='hard'?0.5:0.75);
@@ -689,6 +690,11 @@ export default class GameScene extends Phaser.Scene {
       case 'ring':{
         const n=10;
         for(let i=0;i<n;i++)this._makeEBullet(ex,ey,(i/n)*360,spd*0.85);
+        break;
+      }
+      // Shotgun scatter
+      case 'shotgun':{
+        [-25,-12.5,0,12.5,25].forEach(o=>this._makeEBullet(ex,ey,aimed()+o,spd*(1+Phaser.Math.FloatBetween(-0.1,0.1))));
         break;
       }
       // Cannon: arcing shell that explodes on landing
@@ -1121,15 +1127,17 @@ export default class GameScene extends Phaser.Scene {
       emitter.startFollow(drone, 0, 20);
       
       this.tweens.add({
-        targets: drone, y: -180, duration: 900, ease: 'Quad.easeIn',
+        targets: drone, y: -250, duration: 1800, ease: 'Quad.easeIn',
+        onStart: () => RetroAudio.playHit(), // Sound effect for launch
         onComplete: () => { drone.destroy(); emitter.destroy(); }
       });
     }
 
-    // Delay the actual explosion until drones sweep the screen
-    this.time.delayedCall(400, () => {
+    // Delay the actual explosion until drones sweep mid-screen
+    this.time.delayedCall(900, () => {
       this._vibrate(ImpactStyle.Heavy);
-      this.flashScreen(0xff8800,0.85);this.cameras.main.shake(600,0.025);
+      RetroAudio.playExplosion();
+      this.flashScreen(0xff8800,0.85);this.cameras.main.shake(800,0.030);
       this.enemies.getChildren().slice().forEach(e=>{this._explode(e.x,e.y,1.4);this.destroyEnemy(e,true);});
       this.eBullets.forEach(b=>{if(b.scene)b.destroy();});this.eBullets=[];
       // Also destroy ground objects

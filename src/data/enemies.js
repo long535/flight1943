@@ -80,6 +80,22 @@ export const ENEMY_DATA = {
     dropChance: 0.06
   },
 
+  // Su-57: Stealth fighter - Side-entry, broad shape, shoots shotgun scatter
+  su57: {
+    texture: 'enemy_su57',
+    sizePx: 58,
+    hp: 4,
+    speed: 125,          // Custom lateral speed
+    points: 400,
+    bulletPattern: 'shotgun',
+    bulletColor: 0x00ffff,
+    bulletSpeed: 290,
+    fireDelay: 1200,
+    zigzag: false,
+    lateral: true,       // enters horizontally across screen
+    dropChance: 0.08
+  },
+
   // Heavy Bomber: slow, tanky, enters from the side, drops cannon shells
   bomber: {
     texture: 'enemy_mi24',

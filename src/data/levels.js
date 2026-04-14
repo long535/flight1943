@@ -31,10 +31,12 @@ export const WAVES = [
   { stage:1, delay:11000, enemy:'su34',   count:14, pattern:'line',   spawnGap:350 },
   { stage:1, delay:12000, enemy:'shahed', count:26, pattern:'random', spawnGap:160, warning: true },
   { stage:1, delay:12000, enemy:'bomber', count:3,  pattern:'random', spawnGap:1800, warning: true },
+  { stage:1, delay:11000, enemy:'su57',   count:4,  pattern:'random', spawnGap:1000, warning: true }, // Added Su-57
   { stage:1, delay:13000, enemy:'mi24',   count:14, pattern:'vshape', spawnGap:350 },
   { stage:1, delay:12000, enemy:'mig29',  count:12, pattern:'line',   spawnGap:260, warning: true },
   { stage:1, delay:13000, enemy:'s400',   count:10, pattern:'line',   spawnGap:550 },
   { stage:1, delay:12000, enemy:'drone',  count:32, pattern:'random', spawnGap:120, warning: true },
+  { stage:1, delay:11000, enemy:'su57',   count:6,  pattern:'random', spawnGap:800, warning: true }, // Added Su-57
   // Boss
   { stage:1, delay:5000,  type:'boss',
     phases: 2,
@@ -50,14 +52,13 @@ export const WAVES = [
   // ─────────────────────────────────────────────────────────
   { stage:2, delay:11000, enemy:'mi24',   count:12, pattern:'vshape', spawnGap:380 },
   { stage:2, delay:12000, enemy:'s400',   count:9,  pattern:'line',   spawnGap:560 },
-  { stage:2, delay:11000, enemy:'bomber', count:3,  pattern:'random', spawnGap:1600,
-    warning: true },
-  { stage:2, delay:12000, enemy:'drone',  count:36, pattern:'random', spawnGap:110,
-    warning: true },
-  { stage:2, delay:11000, enemy:'mig29',  count:10, pattern:'vshape', spawnGap:260,
-    warning: true },
+  { stage:2, delay:11000, enemy:'bomber', count:3,  pattern:'random', spawnGap:1600, warning: true },
+  { stage:2, delay:11000, enemy:'su57',   count:6,  pattern:'random', spawnGap:800,  warning: true }, // Added Su-57
+  { stage:2, delay:12000, enemy:'drone',  count:36, pattern:'random', spawnGap:110,  warning: true },
+  { stage:2, delay:11000, enemy:'mig29',  count:10, pattern:'vshape', spawnGap:260,  warning: true },
   { stage:2, delay:12000, enemy:'su34',   count:15, pattern:'vshape', spawnGap:240 },
   { stage:2, delay:11000, enemy:'mi24',   count:18, pattern:'line',   spawnGap:300 },
+  { stage:2, delay:10000, enemy:'su57',   count:10, pattern:'random', spawnGap:600,  warning: true }, // Added Su-57
   // Final wave: bullet hell mix
   { stage:2, delay:10000, enemy:'shahed', count:30, pattern:'random', spawnGap:100,
     warning: true },
