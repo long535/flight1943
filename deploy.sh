@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-VERSION="v0.3.5"
-RELEASE_NOTES="v0.3.5 The Bullet Hell Update:
-- **Massive Enemy Swarms**: Enemy counts across all waves in Stage 1 and Stage 2 have been multiplied by 10x! The spawn gaps have been incredibly shortened to create a true adrenaline-pumping bullet hell experience.
-- **Visual Polish**: Removed solid background artifacts from the new Su-57 aircraft and Kamikaze Bomb drones. They now blend flawlessly with the environment.
-- **Bug Fix**: Addressed a missing file path logic loop causing bomb drones to fail rendering."
+VERSION="v0.3.6"
+RELEASE_NOTES="v0.3.6 Asset Polish Update:
+- **Visual Fixes**: Removed the solid background artifacts from the S-400 Anti-Air Missiles, letting them blend more naturally into the ground terrain.
+- **Boss Correction**: The Submarine Boss is now properly rotated 180 degrees so it faces the correct combat direction.
+- **Scaling Adjustments**: The 'Depot' ground structure has been dramatically scaled down to 0.2x roughly aligning to the background proportions without sacrificing texture quality."
 
 echo "Starting deployment process for $VERSION..."
 

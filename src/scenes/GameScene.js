@@ -405,7 +405,7 @@ export default class GameScene extends Phaser.Scene {
     const x=Phaser.Math.Between(22,GAME_W-22);
     const go=this.add.image(x,-60,texKey).setDepth(1).setFlipY(true);
     // scale sprites to reasonable game size (tank and ship shrank 50%)
-    const sizes={aa_gun:24, tank:26, depot:56, ship:35};
+    const sizes={aa_gun:24, tank:26, depot:12, ship:35};
     const s=sizes[type]||48;
     const tw=this.textures.get(texKey).getSourceImage().width;
     go.setScale(s/tw);
@@ -754,7 +754,13 @@ export default class GameScene extends Phaser.Scene {
       this.bossHP=hp;this.bossMaxHPFull=hp;this.bossPhase=1;this.bossMovDir=1;this.bossFireTimer=0;
       const bTexW=this.textures.get(pd.texture||'boss_tu22m').getSourceImage().width;
       this.boss=this.physics.add.image(GAME_W/2,-130,pd.texture||'boss_tu22m')
-        .setScale((pd.sizePx||110)/bTexW).setDepth(5).setFlipY(true);
+        .setScale((pd.sizePx||110)/bTexW).setDepth(5);
+      
+      if (pd.texture === 'boss_submarine') {
+        this.boss.setAngle(180);
+      } else {
+        this.boss.setFlipY(true);
+      }
       this.boss.body.allowGravity=false;this.boss.hp=hp;
       this.tweens.add({targets:this.boss,y:GAME_H*0.2,duration:1800,ease:'Back.easeOut'});
     });
