@@ -45,7 +45,7 @@ class ProceduralAudioEngine {
   }
 
   playShoot() {
-    this._playTone(880, 'square', 0.1, 0.4, 440);
+    this._playTone(880, 'square', 0.1, 0.08, 440);
   }
 
   playHit() {

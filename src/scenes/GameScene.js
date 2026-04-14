@@ -17,7 +17,7 @@ export default class GameScene extends Phaser.Scene {
     this.diffMult     = this.difficulty === 'hard' ? 1.6 : 1.0;
     this.score=0; this.combo=1; this.lives=3;
     this.energy=100; this.maxEnergy=100;
-    this.weaponLevel=1; this.bombCount=0;
+    this.weaponLevel=1; this.bombCount=data.bombs!==undefined ? data.bombs : 2;
     this.subWeaponType=null; this.subWeaponLevel=0;
     this.shieldActive=false; this.isInvincible=false; this.gamePaused=false;
     this.playerDead=false; this.bossActive=false;
@@ -125,7 +125,7 @@ export default class GameScene extends Phaser.Scene {
     this._comboGlowRight = this.add.rectangle(GAME_W-4, GAME_H/2,8,GAME_H,0xffd700,0).setDepth(29);
 
     // ── Registry ─────────────────────────────────────────────
-    const reg={score:0,lives:3,energy:100,maxEnergy:100,combo:1,weapon:1,missiles:0,bombs:0,bossHP:0,bossMaxHP:1,bossActive:false};
+    const reg={score:0,lives:3,energy:100,maxEnergy:100,combo:1,weapon:1,missiles:0,bombs:2,bossHP:0,bossMaxHP:1,bossActive:false};
     Object.entries(reg).forEach(([k,v])=>this.registry.set(k,v));
 
     this._transitionStage(0);
@@ -1097,25 +1097,57 @@ export default class GameScene extends Phaser.Scene {
     this.bombCount--;
     this._bombsUsed++;
     this._vibrate(ImpactStyle.Heavy);
-    this.showFloatingText(GAME_W/2,GAME_H/2,'💥 BOMB!',0xff8800);
-    this.flashScreen(0xff8800,0.70);this.cameras.main.shake(500,0.020);
-    this.enemies.getChildren().slice().forEach(e=>{this._explode(e.x,e.y,1.4);this.destroyEnemy(e,true);});
-    this.eBullets.forEach(b=>{if(b.scene)b.destroy();});this.eBullets=[];
-    // Also destroy ground objects
-    this.groundObjs.slice().forEach(go=>{
-      if(!go||!go.scene)return;
-      this._explode(go.x,go.y,1.2);
-      this._scoreAdd(go._points);
-      this.showFloatingText(go.x,go.y-10,`+${go._points}`,0xffaa00);
-      go.destroy();
-    });
-    this.groundObjs=[];
-    if(this.bossActive&&this.boss?.active){
-      const dmg=Math.floor(this.bossMaxHPFull*0.18);
-      this.bossHP=Math.max(0,this.bossHP-dmg);this.boss.hp=this.bossHP;
-      this.flashTint(this.boss,0xff8800);this.showFloatingText(this.boss.x,this.boss.y-30,`-${dmg}`,0xff8800);
-      this._checkBossDeath();
+    this.showFloatingText(GAME_W/2,GAME_H/2,'💥 BOMB INCOMING!',0xff8800);
+    RetroAudio.playPowerup();
+
+    // Spawn V-shaped drone swarm
+    const numDrones = 13;
+    const spacingX = GAME_W / Math.max(1, numDrones - 1);
+    const startY = GAME_H + 100;
+
+    for(let i=0; i<numDrones; i++){
+      const x = i * spacingX;
+      // V-shape (or ^ shape): center drones are higher (lower yOffset), edge drones are trailing
+      const distFromCenter = Math.abs(x - GAME_W/2);
+      const yOffset = distFromCenter * 1.1; 
+      
+      const drone = this.add.image(x, startY + yOffset, 'bomb_drone').setDepth(15).setScale(0.85);
+      
+      // Drone fire trail
+      const emitter = this.add.particles(0, 0, 'pb', {
+        speed: 160, angle: 90, scale: { start: 1, end: 0 },
+        blendMode: 'ADD', lifespan: 250, alpha: 0.7
+      });
+      emitter.startFollow(drone, 0, 20);
+      
+      this.tweens.add({
+        targets: drone, y: -180, duration: 900, ease: 'Quad.easeIn',
+        onComplete: () => { drone.destroy(); emitter.destroy(); }
+      });
     }
+
+    // Delay the actual explosion until drones sweep the screen
+    this.time.delayedCall(400, () => {
+      this._vibrate(ImpactStyle.Heavy);
+      this.flashScreen(0xff8800,0.85);this.cameras.main.shake(600,0.025);
+      this.enemies.getChildren().slice().forEach(e=>{this._explode(e.x,e.y,1.4);this.destroyEnemy(e,true);});
+      this.eBullets.forEach(b=>{if(b.scene)b.destroy();});this.eBullets=[];
+      // Also destroy ground objects
+      this.groundObjs.slice().forEach(go=>{
+        if(!go||!go.scene)return;
+        this._explode(go.x,go.y,1.2);
+        this._scoreAdd(go._points);
+        this.showFloatingText(go.x,go.y-10,`+${go._points}`,0xffaa00);
+        go.destroy();
+      });
+      this.groundObjs=[];
+      if(this.bossActive&&this.boss?.active){
+        const dmg=Math.floor(this.bossMaxHPFull*0.18);
+        this.bossHP=Math.max(0,this.bossHP-dmg);this.boss.hp=this.bossHP;
+        this.flashTint(this.boss,0xff8800);this.showFloatingText(this.boss.x,this.boss.y-30,`-${dmg}`,0xff8800);
+        this._checkBossDeath();
+      }
+    });
   }
 
 
@@ -1151,6 +1183,8 @@ export default class GameScene extends Phaser.Scene {
   _respawn(){
     this.playerDead=true;this.isInvincible=true;
     this.energy=this.maxEnergy;this.weaponLevel=Math.max(1,this.weaponLevel-1);
+    this.bombCount=2; // Gift 2 bombs on respawn
+
     this.wingmanActive=false;this.shieldActive=false;this.player.setAlpha(0);
     this.time.delayedCall(1500,()=>{
       this.player.setPosition(GAME_W/2,GAME_H*0.82).setAlpha(1);this.playerDead=false;

@@ -1,13 +1,11 @@
 #!/bin/bash
 set -e
 
-VERSION="v0.3.2"
-RELEASE_NOTES="v0.3.2 Gameplay Balance & Polish Update:
-- Increased overall enemy density by 30-50% in Stages 1 and 2 for a more intense bullet-hell experience.
-- Diversified early stages by mixing in Heavy Bombers and S-400 tanks earlier.
-- Upgraded enemy bullet patterns: SU-34 now fires 'Wave' patterns, MI-24 fires 'Laser' patterns, and S-400 firing rate increased.
-- Shrank the size of Anti-Air ground turrets by 50% for better visual scale mapping.
-- Replaced the sharp stage transition with a smooth, cinematic 800ms crossfade into the pixel-art intermission screens."
+VERSION="v0.3.3"
+RELEASE_NOTES="v0.3.3 High-Impact Visuals Update:
+- **Massive Bomb Animation**: Calling in a bomb strike now summons a massive fleet of Kamikaze drones sweeping the screen in a tight V-formation before triggering a brilliant screen-wiping flash.
+- **Improved Economy**: Players now start the game with 2 bombs, and will be gifted 2 bombs every time they respawn after losing a life.
+- **Audio Mix**: Greatly reduced the volume of the player's primary rapid-fire bullet sound. This makes the music, hits, and explosions feel much punchier."
 
 echo "Starting deployment process for $VERSION..."
 

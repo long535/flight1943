@@ -47,6 +47,7 @@ export default class BootScene extends Phaser.Scene {
     // Sprites - we treat the big spritesheets as single images for now
     // and crop them dynamically in code using texture frames
     this.load.image('player', '/assets/sprites/player.png');
+    this.load.image('bomb_drone', '/assets/player/bomb_drone.png');
     this.load.image('enemy_ka52', '/assets/sprites/enemy_ka52.png');
     this.load.image('enemy_shahed', '/assets/sprites/enemy_shahed.png');
     this.load.image('boss_tu22m', '/assets/sprites/boss_tu22m.png');

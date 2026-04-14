@@ -105,7 +105,7 @@ export default class MenuScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // Version String
-    this.add.text(W / 2, H - 32, 'v0.3.2', {
+    this.add.text(W / 2, H - 32, 'v0.3.3', {
       fontFamily: '"Press Start 2P", monospace',
       fontSize: '7px',
       color: '#555577'
