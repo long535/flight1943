@@ -1,12 +1,13 @@
 #!/bin/bash
 set -e
 
-VERSION="v0.3.1"
-RELEASE_NOTES="v0.3.1 Hotfix Details:
-- Fixed a bug where game audio loops (shooting) would continue playing during the intermission/stage clear screen.
-- Fixed an issue where the background would abruptly flash back to the previous level before transitioning properly.
-- Added Haptic Feedback (vibrations) on mobile devices for major events like taking damage, shield breaks, or using bombs.
-- Perfected the parallax scrolling algorithm for ground objects (tanks/AA guns) so they stick precisely to the scrolling background seamlessly."
+VERSION="v0.3.2"
+RELEASE_NOTES="v0.3.2 Gameplay Balance & Polish Update:
+- Increased overall enemy density by 30-50% in Stages 1 and 2 for a more intense bullet-hell experience.
+- Diversified early stages by mixing in Heavy Bombers and S-400 tanks earlier.
+- Upgraded enemy bullet patterns: SU-34 now fires 'Wave' patterns, MI-24 fires 'Laser' patterns, and S-400 firing rate increased.
+- Shrank the size of Anti-Air ground turrets by 50% for better visual scale mapping.
+- Replaced the sharp stage transition with a smooth, cinematic 800ms crossfade into the pixel-art intermission screens."
 
 echo "Starting deployment process for $VERSION..."
 

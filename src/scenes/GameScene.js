@@ -405,7 +405,7 @@ export default class GameScene extends Phaser.Scene {
     const x=Phaser.Math.Between(22,GAME_W-22);
     const go=this.add.image(x,-60,texKey).setDepth(1).setFlipY(true);
     // scale sprites to reasonable game size (tank and ship shrank 50%)
-    const sizes={aa_gun:48, tank:26, depot:56, ship:35};
+    const sizes={aa_gun:24, tank:26, depot:56, ship:35};
     const s=sizes[type]||48;
     const tw=this.textures.get(texKey).getSourceImage().width;
     go.setScale(s/tw);

@@ -29,21 +29,27 @@ export default class StageCompleteScene extends Phaser.Scene {
     // ── Background ───────────────────────────────────────────
     const info = STAGE_INFO[this.stageIndex] || STAGE_INFO[0];
     const bgKey = info.bgKey;
+    let bgImg;
     try {
-      this.add.image(GAME_W/2, GAME_H/2, bgKey)
-        .setDisplaySize(GAME_W, GAME_H).setDepth(0);
+      bgImg = this.add.image(GAME_W/2, GAME_H/2, bgKey)
+        .setDisplaySize(GAME_W, GAME_H).setDepth(0).setAlpha(0);
     } catch(e) {
-      // fallback solid colour if image missing
-      this.add.rectangle(GAME_W/2, GAME_H/2, GAME_W, GAME_H, 0x111122).setDepth(0);
+      bgImg = this.add.rectangle(GAME_W/2, GAME_H/2, GAME_W, GAME_H, 0x111122).setDepth(0).setAlpha(0);
     }
 
     // Dark gradient overlay
-    const overlay = this.add.rectangle(GAME_W/2, GAME_H/2, GAME_W, GAME_H, 0x000000, 0.62).setDepth(1);
+    const overlay = this.add.rectangle(GAME_W/2, GAME_H/2, GAME_W, GAME_H, 0x000000, 0.62).setDepth(1).setAlpha(0);
 
     // Subtle scanline effect
+    const scanlines = [];
     for(let y=0; y<GAME_H; y+=4) {
-      this.add.rectangle(GAME_W/2, y, GAME_W, 1, 0x000000, 0.18).setDepth(2);
+      scanlines.push(this.add.rectangle(GAME_W/2, y, GAME_W, 1, 0x000000, 0.18).setDepth(2).setAlpha(0));
     }
+
+    // Crossfade background elements in
+    this.tweens.add({ targets: bgImg, alpha: 1, duration: 800 });
+    this.tweens.add({ targets: overlay, alpha: 0.62, duration: 800 });
+    this.tweens.add({ targets: scanlines, alpha: 0.18, duration: 800 });
 
     // ── Rating calculation ───────────────────────────────────
     const rating = this._calcRating();
@@ -130,7 +136,8 @@ export default class StageCompleteScene extends Phaser.Scene {
 
     // ── ANIMATE IN ───────────────────────────────────────────
     const fadeAll = [t1, t2, bannerBg, bannerLine];
-    this.tweens.add({targets:fadeAll, alpha:1, duration:500, delay:200});
+    // Delay text UI slightly to wait for background to fade in
+    this.tweens.add({targets:fadeAll, alpha:1, duration:500, delay:600});
 
     // Rating pops in
     this.time.delayedCall(600, () => {
