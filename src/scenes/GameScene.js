@@ -757,9 +757,8 @@ export default class GameScene extends Phaser.Scene {
         .setScale((pd.sizePx||110)/bTexW).setDepth(5);
       
       if (pd.texture === 'boss_submarine') {
-        // Do nothing special, or maybe setFlipY based on what was done earlier
-        // Wait, previously all bosses had setFlipY(true).
-        this.boss.setFlipY(true);
+        // Image is correct - do NOT flip it
+        this.boss.setFlipY(false);
       } else {
         this.boss.setFlipY(true);
       }
@@ -1125,7 +1124,7 @@ export default class GameScene extends Phaser.Scene {
       const distFromCenter = Math.abs(x - GAME_W/2);
       const yOffset = distFromCenter * 1.1; 
       
-      const drone = this.add.image(x, startY + yOffset, 'bomb_drone').setDepth(15).setScale(0.85);
+      const drone = this.add.image(x, startY + yOffset, 'bomb_drone').setDepth(15).setScale(0.3);
       
       // Drone fire trail
       const emitter = this.add.particles(0, 0, 'pb', {
