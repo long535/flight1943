@@ -1,13 +1,36 @@
 #!/bin/bash
 set -e
 
-VERSION="v0.3.6"
-RELEASE_NOTES="v0.3.6 Asset Polish Update:
-- **Visual Fixes**: Removed the solid background artifacts from the S-400 Anti-Air Missiles, letting them blend more naturally into the ground terrain.
-- **Boss Correction**: The Submarine Boss is now properly rotated 180 degrees so it faces the correct combat direction.
-- **Scaling Adjustments**: The 'Depot' ground structure has been dramatically scaled down to 0.2x roughly aligning to the background proportions without sacrificing texture quality."
+VERSION="v0.3.7"
+RELEASE_NOTES="v0.3.7 Ultimate Bullet Hell & Visual Polish Update (Unified v0.3 Release):
+
+🚀 **Major Gameplay Enhancements (Bullet Hell)**
+- **Massive Enemy Swarms:** Enemy volumes across Stage 1 and Stage 2 have been officially multiplied by **10x**! Spawning intervals are tightened down to push bullet hell density to the absolute rendering limits.
+- **Improved Economy:** Players now start with 2 bombs natively, and are gifted 2 bombs every time they respawn.
+
+✈️ **New Entities & Animations**
+- **New Enemy (Su-57):** A highly agile stealth fighter featuring a horizontal (lateral) combat sweep and a deadly 5-way shotgun spread.
+- **Cinematic Drone Strikes:** Triggering a bomb calls down a breathtaking 13-drone Kamikaze V-formation sweeping from bottom to top, delayed with a deep explosion impact and extended 1.8s animation duration.
+
+🎨 **Visual & Asset Master Polish**
+- Successfully processed and removed AI checkerboard backgrounds from the Su-57 and Kamikaze drones to ensure they flawlessly blend into the warzone.
+- Perfectly rotated the Submarine Boss 180-degrees organically through its texture mapping.
+- Reduced 'Depot' structure sizing by an optimal ratio to maintain visual realism against the parallax ground.
+
+🛠️ **Critical Engine Fixes**
+- **Cross-Scene Memory Fix:** Eliminated the nasty 'Start Battle' freeze bug caused by leftover global UI event listeners persisting through the GameOver sequence."
 
 echo "Starting deployment process for $VERSION..."
+
+# Clean up older v0.3.x releases
+echo "Cleaning up ancient v0.3.x GitHub releases and tags to keep repository pristine..."
+for tag in $(git tag -l "v0.3.*"); do
+    if [ "$tag" != "$VERSION" ]; then
+        echo "Deleting release & tag $tag..."
+        gh release delete "$tag" -y --cleanup-tag || true
+        git push origin --delete "$tag" || true
+    fi
+done
 
 # Enforce Android SDK Location
 export ANDROID_HOME=/home/vibecodingvm/Android/Sdk
@@ -31,7 +54,7 @@ echo "APK successfully built."
 
 echo "Configuring Git..."
 git add .
-git commit -m "Release Frontline 1943 $VERSION" || true
+git commit -m "Release Frontline 1943 $VERSION Unified" || true
 
 echo "Deploying to GitHub..."
 git push -u origin main || true

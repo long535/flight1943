@@ -3,7 +3,7 @@
 A modern hardware-accelerated, retro-styled top-down arcade shooter.  
 Built with **Phaser 3**, powered by **Vite**, and seamlessly deployed to Android using **Capacitor**.
 
-![Version](https://img.shields.io/badge/Version-v0.2.3-blue)
+![Version](https://img.shields.io/badge/Version-v0.3.6-blue)
 ![Platform](https://img.shields.io/badge/Platform-Web%20%7C%20Android-brightgreen)
 
 ---
@@ -18,11 +18,15 @@ Built with **Phaser 3**, powered by **Vite**, and seamlessly deployed to Android
 
 ## 📜 Update Roadmap & History
 
-### v0.2.3 (Latest)
-* **Procedural WebAudio Engine**: Removed the need for external MP3s. Fully mathematical real-time synthetic engine for retro sound waves.
-* Added rhythmic Chiptune variations targeting Stage 0, Stage 1, and Stage 2 backgrounds.
+### v0.3.6 (Latest)
+* **Visual Polish & Asset Finalization**: Removed checkerboard backgrounds from the Su-57 and Kamikaze Bomb drones. Re-scaled `depot_obj` and properly rotated the `boss_submarine` to match the exact in-game top-down combat orientation.
 
-### v0.2.2
+### v0.3.5 (Bullet Hell Update)
+* **Massive Swarms**: Enemy counts strictly multiplied by 10x! Lowered `spawnGap` thresholds dramatically across Stage 1 and 2 to push bullet hell density to the actual rendering limits.
+* **New Enemy (Su-57)**: A highly agile stealth fighter with a horizontal entry (lateral) and a deadly 5-way shotgun spread.
+* **Memory & Lifecycle Fixes**: Eliminated the cross-scene 'Start Battle' freeze by un-registering deeply rooted UI event listeners when a game over sequence transitions.
+
+### v0.2.3
 * **Enemy Volume 300%**: Globally tripled the wave array spawns for maximum visual chaos.
 * **Ground Unit Static Locking**: Adjusted speed models to strictly bolt Tanks, Ships, and Turrets to the scrolling terrain beneath them, eliminating unnatural lateral floating.
 

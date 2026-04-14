@@ -757,7 +757,9 @@ export default class GameScene extends Phaser.Scene {
         .setScale((pd.sizePx||110)/bTexW).setDepth(5);
       
       if (pd.texture === 'boss_submarine') {
-        this.boss.setAngle(180);
+        // Do nothing special, or maybe setFlipY based on what was done earlier
+        // Wait, previously all bosses had setFlipY(true).
+        this.boss.setFlipY(true);
       } else {
         this.boss.setFlipY(true);
       }
